@@ -559,6 +559,23 @@
   (into #{} (map get-tile-sym-counts tileset))
   )
 
+
+(def code-weight {\1 1 \2 2 \3 3 \4 4
+                  \a 1 \A 1 \b 2 \B 2
+                  \c 3 \C 3 \d 4 \D 4
+                  \- 0})
+
+(defn get-tile-weight [code]
+  (reduce + (map code-weight code)))
+
+(defn get-tileset-weight [tileset]
+  (reduce + (map get-tile-weight tileset)))
+
+(defn get-tiling-weight [ts]
+  (reduce + (map #(get-tile-weight (val %)) (ts :tiles))) 
+  )
+
+
 (defn get-tilesets-sym-group-counts [states]
   (into {}
     (map #(vec [(key %) (count (val %))])
@@ -591,15 +608,20 @@
                           (group-by #(get-tileset-sym-counts (get-in % [:params :tileset])) )
                           ;(group-by #(get-tileset-con-counts (get-in % [:params :tileset])) )
                           ;(group-by #(tileset-cons-hash (get-in % [:params :tileset])) )
-                          (sort-by #(sym-group-counts (key %)) )
-                          (reverse)
+                          (filter #(> (sym-group-counts (key %)) 16))
+                          (map #(vec [(key %) (take 64 (val %))]))
+                          (into {})
+                          ;(sort-by #(sym-group-counts (key %)) )
+                          ;(reverse)
+
                           ;(sort-by #(reduce + (map (fn [n] (* n n)) (key %))) )
                           ;(sort-by #(reduce + (key %)))
                           ;(group-by #(* (get-num-connected (first (get-in % [:params :tileset])))
                           ;              (get-num-connected (second (get-in % [:params :tileset])))) )
                           (vals)
                           ;(mapcat (fn [g] (sort-by #(tilecode-to-binary-code (apply str (get-in % [:params :tileset]))) g)))
-                          (mapcat (fn [ts] (sort-by #(count (% :tiles)) ts)) )
+                          (mapcat (fn [ts] (sort-by #(get-tiling-weight %) ts)) )
+                          ;(mapcat (fn [ts] (sort-by #(count (% :tiles)) ts)) )
                           ;(mapcat (fn [g] (sort-by #(apply str (normalize-tileset (get-in % [:params :tileset]))) g)))
 
                           vec
